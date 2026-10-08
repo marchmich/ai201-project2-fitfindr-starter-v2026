@@ -39,9 +39,8 @@
 
 ## What This Does
 
-<!-- Three or four sentences: what a user asks for, and what they get back. -->
 
-
+The user asks for a piece of clothing with a specific description, size, or price and the system returns a result with a matched item.
 
 ---
 
@@ -57,26 +56,28 @@
      on, and if you don't decide it here you'll discover it as a crash in
      Milestone 5. -->
 
+
+
 ### `search_listings`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does: It takes the users input (a description of a clothing item) and searches fo items across platforms**
+- **Inputs: description (str), category (str),  size (str), price (float), color (list)** <!-- name and type each: `max_price` (float), not "a price" -->
+- **Returns: A list of listing dicts that contains title, price, size, platform, color, brand, and category**
+- **When it has nothing: It returns a str saying no results found**
 
 ### `suggest_outfit`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does: It takes an item and a wardrobe and returns outfit ideas**
+- **Inputs: wardrobe list, clothing item**
+- **Returns: an outfit: a combination of a pre-existing piece and the new one**
+- **When it has nothing:  It returns a str saying no results found**
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does: writes a short caption describing the outfit**
+- **Inputs: outfit and the item**
+- **Returns: a caption (string) **
+- **When it has nothing: an empty string**
 
 ---
 
