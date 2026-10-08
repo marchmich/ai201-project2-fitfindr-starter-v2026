@@ -25,10 +25,8 @@ Given a query that matches at least one listing, the agent completes all three
 tool calls and returns a fit card — in at least 4 of 5 tries.
 
 **Why this target:**
-<!-- Why 4 of 5 and not 5 of 5? Something about your search, probably —
-     "my search is a plain keyword match and some phrasings will miss" is a
-     real answer. -->
 
+My search might not be as specific and might be missed 
 ---
 
 ## 2. An impossible query stops before the second tool
@@ -37,8 +35,7 @@ Given a query that matches no listings, the agent stops before calling
 `suggest_outfit` and returns a message naming what to change — 5 of 5 tries.
 
 **Why this target:**
-<!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
-     about this path? -->
+If there are no listings, the agent stops calling the second tool right away to save resources. Suggest Outfit won't work if there is no listing.
 
 ---
 
@@ -53,12 +50,12 @@ Given a query that matches no listings, the agent stops before calling
      look like state failure — it looks like a tool problem. Something that
      compares session["selected_item"] against what actually reached
      suggest_outfit is the shape you're after. -->
-
+The item selected is mentioned in every tool and has a description to know that the next tool received the same item.
 
 
 **Why this target:**
 
-
+This allows to measure whether the item selected is the same one used in every tool.
 
 ---
 
@@ -74,12 +71,12 @@ Given a query that matches no listings, the agent stops before calling
      mentions the price? Two different items producing the same opening
      sentence? A card longer than a caption anyone would post? Any of those can
      be turned into a number. -->
-
+The fit card captions are complete, distinct, and postable. It includes the price, the item's name, doesn't make up any false information.
 
 
 **Why this target:**
 
-
+If this information is not included, the card will not be complete.
 
 ---
 
@@ -91,11 +88,11 @@ Given a query that matches no listings, the agent stops before calling
      wardrobe path, what happens when the model can't be reached, whether the
      search respects a price ceiling — anything, as long as it names a number
      or an observable outcome. -->
-
+If the model can't be reached, the systems stops and let's the user know there's an error and explains where.
 
 
 **Why this target:**
-
+This allows me to evaluate where the system went wrong.
 
 
 ---
