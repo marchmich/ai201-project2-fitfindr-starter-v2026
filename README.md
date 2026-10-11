@@ -94,13 +94,23 @@ The user asks for a piece of clothing with a specific description, size, or pric
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:** If `search_listings` returns an empty list, put a message in
+`session["error"]` that tells the user what to change (raise the max price, try a
+different size or drop it, or use broader words) and return the session without
+calling `suggest_outfit` or `create_fit_card`. Otherwise, put the first result in
+`session["selected_item"]` and go to `suggest_outfit`, then `create_fit_card`.
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:** egex, in `agent.py::parse_query`. One pattern pulls
+out the max price ("under / below / less than / max / up to" followed by a number),
+another pulls out the size ("size" followed by a token). Those phrases are removed,
+and the remaining words become the description. <!-- regex, string splitting, or asking the model — say which -->
 
-**What moves through the session:** <!-- which fields, in what order -->
+**What moves through the session:** query` → `parsed` (`description`, `size`,
+`max_price') → `search_results` → `selected_item` → `outfit_suggestion` →
+`fit_card`. On the empty-results branch, `error` is set and the run stops after
+`search_results`, leaving `selected_item`, `outfit_suggestion` and `fit_card` as `None` <!-- which fields, in what order -->
 
 ---
 
@@ -114,20 +124,21 @@ The user asks for a piece of clothing with a specific description, size, or pric
 **One full query**
 
 ```
-$ python app.py ask '...'
+ python app.py ask 'white jacket under 50'
 
 ```
 
 **The three tools, tested one at a time**
 
 ```
-$ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
+$ python -c "from tools import search_listings; print(search_listings('white jacket', max_price=50))"
 
 ```
 
-[{'id': 'lst_017', 'title': 'Mesh Long-Sleeve Top — Black', 'description': 'Sheer black mesh long-sleeve. Great for layering under agraphic tee or over a bralette. Stretchy material, fits true to size.', 'category': 'tops', 'style_tags': ['y2k', 'grunge', 'goth', 'layering'], 'size': 'S/M', 'condition': 'excellent', 'price': 15.0, 'colors': ['black'], 'brand': None, 'platform': 'depop'}, {'id':'lst_002', 'title': 'Y2K Baby Tee — Butterfly Print', 'description': 'Super cute early 2000s baby tee with butterfly graphic. Fittedcrop length. Tag says medium but fits like a small.', 'category': 'tops', 'style_tags': ['y2k', 'vintage', 'graphic tee', 'cottagecore'], 'size': 'S/M', 'condition': 'excellent', 'price': 18.0, 'colors': ['white', 'pink', 'purple'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_033', 'title': 'Vintage Band Tee — Faded Grey', 'description': 'Faded grey band-style tee with distressed graphic. Crew neck. Fits boxy. Well-loved but no holes or major damage.', 'category': 'tops', 'style_tags': ['vintage', 'grunge', 'band tee', 'graphic tee', 'streetwear'], 'size': 'L', 'condition': 'fair', 'price': 19.0, 'colors': ['grey', 'charcoal'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_006', 'title': 'Graphic Tee — 2003 Tour Bootleg Style', 'description': 'Vintage-style bootleg tee with faded graphic. Slightly boxy fit. 100% cotton, soft and worn-in.', 'category': 'tops', 'style_tags': ['graphic tee', 'vintage', 'grunge','streetwear', 'band tee'], 'size': 'L', 'condition': 'good', 'price': 24.0, 'colors': ['black'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_015', 'title': 'Vintage Graphic Hoodie — Faded Black', 'description': 'Faded black pullover hoodie with barely-visible vintage graphic on the chest. Cozy interior. Some pilling but adds to the worn-in look.', 'category': 'tops', 'style_tags': ['vintage', 'grunge', 'graphic', 'streetwear'], 'size': 'L', 'condition': 'fair', 'price': 26.0, 'colors': ['black', 'charcoal'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_011', 'title': 'Low-Rise Cargo Pants — Khaki', 'description': 'Y2K era low-rise cargo pants. Lots of pockets. Khaki color, slightly distressed at the hems. Great for layering with a long tee.', 'category': 'bottoms', 'style_tags': ['y2k', 'cargo', '2000s', 'streetwear'], 'size': 'W29', 'condition': 'fair', 'price': 27.0, 'colors': ['khaki', 'tan'], 'brand': None, 'platform': 'poshmark'}]
+[{'id': 'lst_004', 'title': '90s Track Jacket — Navy/White Stripe', 'description': 'Authentic 90s track jacket with stripe detail down the sleeves. Full zip. Lightweight — great for layering.', 'category': 'outerwear', 'style_tags': ['90s', 'vintage', 'athletic', 'streetwear'], 'size': 'M', 'condition': 'excellent', 'price': 45.0, 'colors': ['navy', 'white'], 'brand': 'Champion', 'platform': 'poshmark'}, {'id': 'lst_002', 'title': 'Y2K Baby Tee — Butterfly Print', 'description': 'Super cute early 2000s baby tee with butterflygraphic. Fitted crop length. Tag says medium but fits like a small.', 'category': 'tops', 'style_tags': ['y2k', 'vintage', 'graphic tee', 'cottagecore'], 'size': 'S/M', 'condition': 'excellent', 'price': 18.0, 'colors': ['white', 'pink', 'purple'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_035', 'title': 'Low-Top Canvas Sneakers — Off-White', 'description': 'Classic low-top canvas sneakers in off-white. Very minimal. Some light yellowing on the sole edges from age. Size 9.', 'category': 'shoes', 'style_tags': ['classic', 'minimal', 'streetwear', 'basics'], 'size': 'US 9', 'condition': 'good', 'price': 20.0, 'colors': ['off-white', 'cream'], 'brand':None, 'platform': 'poshmark'}, {'id': 'lst_023', 'title': 'Crochet Halter Top — Cream', 'description': 'Handmade-looking crochet halter. Ties at the neck and back. Perfect for layering over a tank in summer.', 'category': 'tops', 'style_tags': ['cottagecore', 'boho', 'crochet', 'summer'], 'size': 'S/M', 'condition': 'excellent', 'price': 22.0, 'colors': ['cream', 'off-white'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_032', 'title': 'Shacket — Olive Canvas', 'description': 'Olive canvas shacket — thicker than a shirt, lighter than a jacket. Chest pockets, button-front. Great transitional layer.', 'category': 'outerwear', 'style_tags': ['earth tones', 'classic', 'layering', 'minimal'], 'size': 'M/L', 'condition': 'excellent', 'price': 33.0, 'colors': ['olive', 'green'], 'brand': None, 'platform': 'poshmark'}, {'id': 'lst_018', 'title': 'Vintage Linen Blazer — Cream', 'description': 'Lightweight linen blazer in cream. Relaxed fit, unstructured shoulders. Two front pockets. Could be dressed up or styled casually.', 'category': 'outerwear', 'style_tags': ['vintage', 'classic', 'linen', 'cottagecore', 'minimal'], 'size': 'M/L', 'condition': 'excellent', 'price': 38.0, 'colors': ['cream', 'off-white'], 'brand': None, 'platform': 'thredUp'}, {'id': 'lst_007', 'title': 'Denim Jacket — Light Wash, Cropped', 'description': 'Cropped denim jacket in a light wash. Great structured shoulders. Blank canvas — no patches or pins but would be perfect to customize.', 'category': 'outerwear', 'style_tags': ['denim', 'vintage', 'classic', 'streetwear'], 'size': 'S', 'condition': 'excellent', 'price': 42.0, 'colors': ['light blue'], 'brand': 'Wrangler', 'platform': 'poshmark'}, {'id': 'lst_019', 'title': 'PlatformSneakers — White Chunky Sole', 'description': 'White chunky platform sneakers. Very late 90s / early 2000s energy. Velcro straps. True to size. Some sole yellowing.', 'category': 'shoes', 'style_tags': ['y2k', 'platform', '90s', 'streetwear'], 'size': 'US 8', 'condition': 'good', 'price': 48.0, 'colors': ['white'], 'brand': None, 'platform': 'poshmark'}]
+
 ```
-$ python -c "from tools import suggest_outfit; ..."
+python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))""
 
 ```
 Hey there, fashionista! Those vintage Levi's 501s are an absolute thrift score. Since you already have an awesome wardrobe, let's style your potential new jeans with two effortless looks using *only* the pieces you already own!
@@ -156,9 +167,9 @@ Score these vintage Levi's 501 jeans for just $38.00 on depop and my closet is o
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* I asked to explain what the planning loop does
+- *What came back:* It helped me build the code for it
+- *What I changed:* I changed parse_query 
 
 **Moment 2**
 
