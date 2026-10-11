@@ -12,7 +12,7 @@ Build and test your three tools in `tools.py` first. Then come here.
 
     python agent.py          runs both example paths below
 """
-
+import re
 import config
 import trace
 from tools import search_listings, suggest_outfit, create_fit_card
@@ -49,68 +49,100 @@ def new_session(query: str, wardrobe: dict) -> dict:
 
 # ── planning loop ─────────────────────────────────────────────────────────────
 
+def parse_query(query: str) -> dict:
+    """
+    Regex parser. Pulls a max price and a size out of the query; whatever
+    text is left becomes the description.
+      "vintage graphic tee under $30, size M"
+        -> {"description": "vintage graphic tee", "size": "m", "max_price": 30.0}
+    """
+    text = query.lower()
+
+    max_price = None
+    m = re.search(r"(?:under|below|less than|max|up to)\s*\$?(\d+(?:\.\d+)?)", text)
+    if m:
+        max_price = float(m.group(1))
+        text = text.replace(m.group(0), " ")
+
+    size = None
+    m = re.search(r"\bsize\s+([a-z0-9]+)\b", text)
+    if m:
+        size = m.group(1)
+        text = text.replace(m.group(0), " ")
+
+    # Drop leftover punctuation like the comma in "..., size M"
+    description = " ".join(re.findall(r"[a-z0-9]+", text))
+    return {"description": description, "size": size, "max_price": max_price}
+
+
 def run_agent(query: str, wardrobe: dict) -> dict:
-    """
-    Run the loop once and return the finished session.
-
-    Args:
-        query:    what the user asked for, in plain language
-                  (e.g. "vintage graphic tee under $30, size M").
-        wardrobe: a wardrobe dict — get_example_wardrobe() or
-                  get_empty_wardrobe() from utils/data_loader.py.
-
-    Returns:
-        The session dict. **Check session["error"] first** — if it isn't None,
-        the run ended early and the later fields will still be None.
-
-    ─────────────────────────────────────────────────────────────────────────
-    TODO — build this, following the branch rule you wrote in Milestone 2.
-
-      1. Start a session with new_session().
-
-      2. Count the times round the loop, and call trace.check_iterations(count)
-         on each one before you go again. It raises when the count passes
-         MAX_ITERATIONS in config.py — see trace.py.
-
-      3. Parse the query into a description, a size, and a max_price. Regex,
-         string splitting, or asking the model are all fine — say which you
-         chose in your README. Put the result in session["parsed"].
-
-      4. Call search_listings() with what you parsed.
-         Put the results in session["search_results"].
-
-         ⚠️ THIS IS THE BRANCH. If nothing came back:
-              - put a message in session["error"] saying what the user could
-                change — "No results" is not that message
-              - return the session
-              - do NOT call suggest_outfit with nothing
-
-      5. Choose an item — the first result is fine. Put it in
-         session["selected_item"].
-
-      6. Call suggest_outfit() with the selected item and the wardrobe.
-         Put the result in session["outfit_suggestion"].
-
-      7. Call create_fit_card() with the outfit and the item.
-         Put the result in session["fit_card"].
-
-      8. Return the session.
-
-    ─────────────────────────────────────────────────────────────────────────
-    IN UNIT 4 you come back and add two things:
-
-      • Trace calls. One per step. `trace.step("search_listings", inputs=...,
-        returned=...)` — see trace.py. Your README needs the output.
-
-      • A handler for ModelUnavailable, so a bad key produces a message rather
-        than a stack trace. The import is already at the top of this file.
-    """
+    """(keep your existing docstring here)"""
     session = new_session(query, wardrobe)
+    steps = 0
 
-    # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
+    # Step 1: parse
+    steps += 1
+    trace.check_iterations(steps)
+    session["parsed"] = parse_query(session["query"])
+
+    # Step 2: search, reading the parsed values back out of the session
+    steps += 1
+    trace.check_iterations(steps)
+    parsed = session["parsed"]
+    session["search_results"] = search_listings(
+        parsed["description"],
+        size=parsed["size"],
+        max_price=parsed["max_price"],
+    )
+
+    # BRANCH: nothing came back -> tell the user what to change, and stop
+    if not session["search_results"]:
+        session["error"] = _no_results_message(session["parsed"])
+        return session
+
+    # Step 3: pick the top-ranked result
+    session["selected_item"] = session["search_results"][0]
+
+    # Step 4: outfit
+    steps += 1
+    trace.check_iterations(steps)
+    session["outfit_suggestion"] = suggest_outfit(
+        session["selected_item"], session["wardrobe"]
+    )
+
+    # Step 5: fit card
+    steps += 1
+    trace.check_iterations(steps)
+    session["fit_card"] = create_fit_card(
+        session["outfit_suggestion"], session["selected_item"]
+    )
+
     return session
 
+
+def _no_results_message(parsed: dict) -> str:
+    """Build an error that says what the user could change, not just 'No results'."""
+    if not parsed["description"]:
+        return ("I couldn't tell what item you're looking for. "
+                "Add a description, e.g. 'denim jacket size M under $40'.")
+
+    filters = []
+    if parsed["size"]:
+        filters.append(f"size {parsed['size'].upper()}")
+    if parsed["max_price"] is not None:
+        filters.append(f"under ${parsed['max_price']:.0f}")
+
+    msg = f"Nothing matched \"{parsed['description']}\""
+    if filters:
+        msg += " in " + ", ".join(filters)
+    msg += ". Try "
+    tips = []
+    if parsed["max_price"] is not None:
+        tips.append("raising your max price")
+    if parsed["size"]:
+        tips.append("a different size or dropping the size")
+    tips.append("broader words (e.g. 'jacket' instead of 'cropped corduroy jacket')")
+    return msg + ", ".join(tips) + "."
 
 # ── running it directly ───────────────────────────────────────────────────────
 
