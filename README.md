@@ -60,24 +60,24 @@ The user asks for a piece of clothing with a specific description, size, or pric
 
 ### `search_listings`
 
-- **What it does: It takes the users input (a description of a clothing item) and searches fo items across platforms**
-- **Inputs: description (str), category (str),  size (str), price (float), color (list)** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns: A list of listing dicts that contains title, price, size, platform, color, brand, and category**
-- **When it has nothing: It returns a str saying no results found**
+- **What it does: It takes the users input (a description of a clothing item) that can include size, brand, max price or style and searches for items across the catalogue that match the input. It filters by input and eliminate listings that do not match (i.e. wrong size or price). Then sends the results to suggest_outfits**
+- **Inputs: description (str), category (str),  size (str),max_price (float), color (list) or None=None** <!-- name and type each: `max_price` (float), not "a price" -->
+- **Returns: A list of listing dicts that contains title, price, size, platform, color, brand, and category. Ranked by matching compatibility and lower price**
+- **When it has nothing: It returns an empty list**
 
 ### `suggest_outfit`
 
-- **What it does: It takes an item and a wardrobe and returns outfit ideas**
-- **Inputs: wardrobe list, clothing item**
-- **Returns: an outfit: a combination of a pre-existing piece and the new one**
-- **When it has nothing:  It returns a str saying no results found**
+- **What it does: It takes the list of listing dicts of search_listings and suggests 2 outfits based on the result listings and the user's wardrobe. Then sends the suggested outfit to create_fit_card**
+- **Inputs: wardrobe list, dictionary listing**
+- **Returns: A non-empty list outfit a combination of a pre-existing piece and the new one**
+- **When it has nothing:  It returns a str saying no results found, and stops. Does not call create_fit_card**
 
 ### `create_fit_card`
 
-- **What it does: writes a short caption describing the outfit**
-- **Inputs: outfit and the item**
-- **Returns: a caption (string) **
-- **When it has nothing: an empty string**
+- **What it does: Takes the list from suggest_outfit and writes a short caption describing the outfit, including the description of the new iteam and how it could be worn with the pre-existing outfits.**
+- **Inputs: outfit (str) and the item (list)**
+- **Returns: a caption (string) of 2-4 sentences that inlcude the price (in digits) and the platform where its listed.**
+- **When it has nothing: If the outfit is empty, it returns a feedback message instead of calling the model or rising an exception.**
 
 ---
 

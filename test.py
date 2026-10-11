@@ -1,317 +1,156 @@
-#!/usr/bin/env python3
 """
-AI201 environment check.
+The three FitFindr tools.
 
-Run this before every class:
+Each one is a standalone function you can call and test on its own, before any
+of them are wired into the loop. Build and test them one at a time — three
+untested tools joined by a loop is one problem that looks like six, because you
+can't tell which layer is lying to you.
 
-    python test.py
+    search_listings(description, size, max_price)  → list[dict]
+    suggest_outfit(new_item, wardrobe)             → str
+    create_fit_card(outfit, new_item)              → str
 
-It checks the things that actually break: your Python version, your virtual
-environment, your pinned packages, your API key, and one real call to the
-model. It is the same file in every unit's starter repo — the checks adapt
-to whatever that unit's requirements.txt pins.
+All three are stubs right now. They run and they do nothing — that's the
+starting position and it's deliberate.
 
-Nothing here touches your project code, and nothing here is graded.
+⚠️ Before you write any of them, fill in the **Tool Inventory** section of your
+README (Milestone 2). Four lines per tool: what it does, each input with its
+type, exactly what it returns, and what it returns when it has nothing to give.
+That last line is what your loop branches on. "Returns a list" earns nothing —
+the description has to say what is *in* the list.
 """
 
-import importlib
-import importlib.metadata as md
-import os
-import platform
-import re
-import shutil
-import sys
-from pathlib import Path
-
-# --- Course-wide pins -------------------------------------------------------
-# The model lives here, in one place, so a provider change is one edit.
-# Override locally by setting AI201_MODEL in your .env.
-MODEL = os.getenv("AI201_MODEL", "gemini-3.5-flash-lite")
-
-MIN_PYTHON = (3, 11)
-MAX_PYTHON = (3, 14)  # exclusive — 3.14 breaks the pinned stack
-MIN_DISK_GB = 2
-MIN_RAM_GB = 4
-
-# Distribution name on PyPI -> module name you actually import.
-IMPORT_NAMES = {
-    "python-dotenv": "dotenv",
-    "google-genai": "google.genai",
-    "sentence-transformers": "sentence_transformers",
-    "rank-bm25": "rank_bm25",
-    "rank_bm25": "rank_bm25",
-    "pillow": "PIL",
-    "beautifulsoup4": "bs4",
-}
-
-ROOT = Path(__file__).resolve().parent
-
-passed, failed, warned, skipped = [], [], [], []
+import config  # noqa: F401 — you'll use this in search_listings
+from generate import generate
+from utils.data_loader import load_listings
 
 
-def report(status, name, detail=""):
-    line = f"[{status:<4}] {name}"
-    if detail:
-        line += f"\n         {detail}"
-    print(line)
-    {"PASS": passed, "FAIL": failed, "WARN": warned, "SKIP": skipped}[status].append(name)
+# ── Tool 1: search_listings ───────────────────────────────────────────────────
+
+def search_listings(
+    description: str,
+    size: str | None = None,
+    max_price: float | None = None,
+) -> list[dict]:
+    """
+    Search the listings data for items matching a description, and optionally a
+    size and a price ceiling.
+
+    This is the tool that doesn't call the model, which makes it the easiest one
+    to test and the one to move onto MCP in unit 4.
+
+    Args:
+        description: keywords describing what the user wants
+                     (e.g. "vintage graphic tee").
+        size:        a size string to filter by, or None to skip size filtering.
+                     Match case-insensitively — "M" should match "S/M".
+
+                     ⚠️ Read the sizes in the data before you reach for a plain
+                     substring test. `"s" in "us 9"` is True, and so is
+                     `"l" in "xl"`. A filter that returns shoes when someone
+                     asked for a small top reads like a broken search, and it
+                     will quietly cost you in unit 4 when you test criterion 1.
+                     What counts as a size match is part of your spec — decide
+                     it and write it into your Tool Inventory.
+        max_price:   maximum price, inclusive, or None to skip price filtering.
+
+    Returns:
+        A list of matching listing dicts, best match first.
+        **Returns an empty list when nothing matches — an empty list, not None,
+        and not an exception.** Your loop branches on this.
+
+    Each listing dict has these fields:
+        id, title, description, category, style_tags (list), size,
+        condition, price (float), colors (list), brand (str or None), platform
+
+    Note that `brand` is None for most listings. That is deliberate and
+    realistic — thrift listings often have no brand. If something you write
+    assumes a brand is always there, you will find out in unit 4.
+
+    TODO:
+        1. Load every listing with load_listings().
+        2. Filter by max_price and by size, when each is provided.
+        3. Score what's left by keyword overlap with `description`.
+        4. Drop anything scoring zero.
+        5. Sort by score, highest first, and return the listing dicts —
+           at most config.SEARCH_RESULT_LIMIT of them.
+
+    Test it from a terminal before you move on:
+        python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
+    """
+    # TODO: replace this with your implementation
+    return []
 
 
-# --- 1. Python --------------------------------------------------------------
+# ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
 
-def check_python():
-    v = sys.version_info
-    actual = f"{v.major}.{v.minor}.{v.micro}"
-    if (v.major, v.minor) < MIN_PYTHON:
-        return report("FAIL", "Python version", f"Found {actual}. This course needs 3.11 or newer.")
-    if (v.major, v.minor) >= MAX_PYTHON:
-        return report(
-            "FAIL",
-            "Python version",
-            f"Found {actual}. The pinned packages do not support 3.14 yet — "
-            f"install 3.13 and rebuild your virtual environment.",
-        )
-    report("PASS", "Python version", f"{actual} on {platform.system()}")
+def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
+    """
+    Given a thrifted item and the user's wardrobe, suggest one or two outfits.
 
+    This one calls the model, through `generate()`. You don't need to think
+    about rate limits — the adapter handles pacing for you.
 
-def check_venv():
-    active = sys.prefix != getattr(sys, "base_prefix", sys.prefix)
-    if not active:
-        return report(
-            "FAIL",
-            "Virtual environment",
-            "Not active. Run the activate command for your OS, then try again. "
-            "Installing into your system Python is the most common cause of "
-            "'it worked yesterday'.",
-        )
-    report("PASS", "Virtual environment", sys.prefix)
+    Args:
+        new_item: a listing dict — the item the user is considering.
+        wardrobe: a wardrobe dict with an 'items' key holding a list of items.
+                  **It may be empty.** Handle that.
 
+    Returns:
+        A non-empty string with outfit suggestions.
+        With an empty wardrobe, return general styling advice rather than
+        raising or returning "". Unit 4 has you trigger the empty wardrobe on
+        purpose, so decide now what it should do.
 
-# --- 2. Packages ------------------------------------------------------------
+    TODO:
+        1. Check whether wardrobe['items'] is empty.
+        2. If it is, ask the model for general styling ideas for this item.
+        3. If it isn't, format the wardrobe items into the prompt and ask for
+           specific combinations naming pieces the user already owns.
+        4. Return the model's response.
 
-def parse_requirements(path):
-    """Yield (distribution_name, raw_specifier) for each real requirement line."""
-    reqs = []
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        line = raw.split("#")[0].strip()
-        if not line or line.startswith("-"):
-            continue
-        name = re.split(r"[<>=!~\[;]", line, maxsplit=1)[0].strip()
-        if name:
-            reqs.append((name, line))
-    return reqs
+    Test it from a terminal before you move on:
+        python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
+    """
+    # TODO: replace this with your implementation
+    return ""
 
 
-def check_packages():
-    req_file = ROOT / "requirements.txt"
-    if not req_file.exists():
-        return report(
-            "FAIL",
-            "requirements.txt",
-            f"Not found next to test.py. Run this from inside the starter repo folder.",
-        )
+# ── Tool 3: create_fit_card ───────────────────────────────────────────────────
 
-    missing, wrong = [], []
-    for dist, spec in parse_requirements(req_file):
-        module = IMPORT_NAMES.get(dist.lower(), dist.replace("-", "_"))
-        try:
-            importlib.import_module(module)
-        except Exception as e:
-            missing.append(f"{dist} ({type(e).__name__})")
-            continue
-        try:
-            installed = md.version(dist)
-        except md.PackageNotFoundError:
-            continue
-        if "==" in spec:
-            want = spec.split("==")[1].split(",")[0].strip()
-            if installed != want:
-                wrong.append(f"{dist}: pinned {want}, installed {installed}")
+def create_fit_card(outfit: str, new_item: dict) -> str:
+    """
+    Write a short caption someone would actually post about the find.
 
-    if missing:
-        return report(
-            "FAIL",
-            "Pinned packages",
-            "Could not import: " + ", ".join(missing)
-            + "\n         Fix: pip install -r requirements.txt",
-        )
-    if wrong:
-        return report("WARN", "Pinned packages", "; ".join(wrong))
-    report("PASS", "Pinned packages", f"all {len(parse_requirements(req_file))} import cleanly")
+    This calls the model too.
 
+    Args:
+        outfit:   the outfit suggestion string from suggest_outfit().
+        new_item: the listing dict for the item.
 
-# --- 3. Machine -------------------------------------------------------------
+    Returns:
+        A two-to-four sentence caption.
+        If `outfit` is empty or whitespace, return a descriptive message rather
+        than raising.
 
-def total_ram_gb():
-    try:
-        if hasattr(os, "sysconf") and "SC_PAGE_SIZE" in os.sysconf_names:
-            return os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1024**3
-        if sys.platform == "win32":
-            import ctypes
+    The caption should read like a real post rather than a product description,
+    mention the item and its price and platform once each, and be specific about
+    the vibe.
 
-            class MemStatus(ctypes.Structure):
-                _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
-                            ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
-                            ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
-                            ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
-                            ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+    It should also come out **differently for different inputs**. If you run
+    this three times on the same item and get three word-for-word identical
+    strings, it's one of two things, and both are near the top of `config.py`:
 
-            stat = MemStatus()
-            stat.dwLength = ctypes.sizeof(MemStatus)
-            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
-            return stat.ullTotalPhys / 1024**3
-    except Exception:
-        pass
-    return None
+        • CACHE_ENABLED — the adapter handed back an answer it already had
+        • TEMPERATURE   — at 0.0 the model gives the same words every time
 
+    TODO:
+        1. Guard against an empty or whitespace-only `outfit`.
+        2. Build a prompt with the item details and the outfit.
+        3. Call generate() and return the response.
 
-def check_machine():
-    free_gb = shutil.disk_usage(ROOT).free / 1024**3
-    if free_gb < MIN_DISK_GB:
-        report("FAIL", "Free disk space",
-               f"{free_gb:.1f} GB free, need about {MIN_DISK_GB} GB. "
-               f"Room for the virtual environment and your results.")
-    else:
-        report("PASS", "Free disk space", f"{free_gb:.1f} GB")
-
-    ram = total_ram_gb()
-    if ram is None:
-        report("SKIP", "Memory", "Could not read total RAM on this OS — check manually.")
-    elif ram < MIN_RAM_GB:
-        report("WARN", "Memory",
-               f"{ram:.1f} GB total, {MIN_RAM_GB} GB recommended. Things will run, "
-               f"but close other apps while indexing.")
-    else:
-        report("PASS", "Memory", f"{ram:.1f} GB")
-
-
-# --- 4. Secrets -------------------------------------------------------------
-
-def check_key_hygiene():
-    gitignore = ROOT / ".gitignore"
-    if not gitignore.exists():
-        return report("FAIL", "Key hygiene", "No .gitignore in this repo — your key can reach GitHub.")
-    entries = {l.strip() for l in gitignore.read_text(encoding="utf-8").splitlines()}
-    if ".env" not in entries:
-        return report("FAIL", "Key hygiene",
-                      ".env is not listed in .gitignore. Add a line containing exactly: .env")
-    report("PASS", "Key hygiene", ".env is ignored by git")
-
-
-def load_key():
-    try:
-        from dotenv import load_dotenv
-        load_dotenv(ROOT / ".env")
-    except ImportError:
-        pass
-    return os.getenv("GEMINI_API_KEY", "").strip()
-
-
-def check_key_present(key):
-    if not (ROOT / ".env").exists():
-        return report("FAIL", "API key", "No .env file. Copy .env.example to .env and paste your key in.")
-    if not key:
-        return report("FAIL", "API key", "GEMINI_API_KEY is empty in .env.")
-    if key.startswith(("your_", "<", "paste")) or key == "your_key_here":
-        return report("FAIL", "API key", "GEMINI_API_KEY still holds the placeholder text.")
-    if key != key.strip('"\'' ):
-        return report("FAIL", "API key", "Remove the quotes around the key in .env.")
-    report("PASS", "API key", f"loaded, {len(key)} characters")
-    return True
-
-
-# --- 5. The slow ones -------------------------------------------------------
-
-def check_mcp():
-    """Unit 4's one new install. Present from unit 3 so nobody discovers it late."""
-    try:
-        from mcp.server.fastmcp import FastMCP  # noqa: F401
-        from mcp import ClientSession  # noqa: F401
-        from mcp.client.stdio import stdio_client  # noqa: F401
-    except ImportError as exc:
-        return report("FAIL", "MCP", f"Could not import: {exc}. Re-run pip install -r requirements.txt.")
-    report("PASS", "MCP", "server and client both import")
-
-
-def check_data():
-    """The listings and wardrobe files the tools read."""
-    try:
-        sys.path.insert(0, str(ROOT))
-        from utils.data_loader import load_listings, get_example_wardrobe, get_empty_wardrobe
-
-        listings = load_listings()
-        example = get_example_wardrobe()
-        empty = get_empty_wardrobe()
-    except Exception as exc:  # noqa: BLE001
-        return report("FAIL", "Project data", f"{type(exc).__name__}: {exc}")
-
-    if not listings:
-        return report("FAIL", "Project data", "listings.json loaded but is empty")
-    if empty.get("items"):
-        return report("WARN", "Project data", "the empty wardrobe isn't empty")
-
-    report(
-        "PASS",
-        "Project data",
-        f"{len(listings)} listings, {len(example['items'])} wardrobe items",
-    )
-
-
-def check_api_call(key):
-    try:
-        from google import genai
-    except ImportError:
-        return report("SKIP", "Model call", "google-genai not installed yet.")
-    try:
-        client = genai.Client(api_key=key)
-        resp = client.models.generate_content(model=MODEL, contents="Reply with one word: ready")
-        text = (resp.text or "").strip()
-        report("PASS", "Model call", f'{MODEL} replied "{text[:40]}"')
-    except Exception as e:
-        msg = str(e)
-        hint = ""
-        if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
-            hint = "\n         That's a rate limit, not a broken key. Wait a minute and re-run."
-        elif "API key" in msg or "401" in msg or "403" in msg or "PERMISSION" in msg:
-            hint = "\n         The key was rejected. Create a new one and paste it into .env again."
-        elif "404" in msg or "NOT_FOUND" in msg:
-            hint = f"\n         The model string '{MODEL}' did not resolve. Post in the help channel."
-        report("FAIL", "Model call", f"{type(e).__name__}: {msg[:160]}{hint}")
-
-
-# --- Run --------------------------------------------------------------------
-
-def main():
-    print("\nAI201 environment check\n" + "-" * 60)
-    check_python()
-    check_venv()
-    check_packages()
-    check_machine()
-    check_key_hygiene()
-    key = load_key()
-    has_key = check_key_present(key)
-    check_mcp()
-    check_data()
-    if has_key:
-        check_api_call(key)
-    else:
-        report("SKIP", "Model call", "no key to test with")
-
-    print("-" * 60)
-    print(f"{len(passed)} passed, {len(failed)} failed, "
-          f"{len(warned)} to look at, {len(skipped)} skipped\n")
-    if failed:
-        print("Not ready yet. Fix the FAIL lines above, then run test.py again.")
-        print("Still stuck after one honest attempt? Post the whole output in the")
-        print("help channel — the day before class, not the morning of.\n")
-        return 1
-    if skipped:
-        print("You're set for what's installed. The skipped checks are packages")
-        print("this unit's requirements.txt doesn't pin yet — that's expected.\n")
-        return 0
-    print("You're set. See you in class.\n")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+    Test it from a terminal before you move on:
+        python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
+    """
+    # TODO: replace this with your implementation
+    return ""
