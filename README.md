@@ -125,16 +125,24 @@ $ python -c "from tools import search_listings; print(search_listings('graphic t
 
 ```
 
+[{'id': 'lst_017', 'title': 'Mesh Long-Sleeve Top — Black', 'description': 'Sheer black mesh long-sleeve. Great for layering under agraphic tee or over a bralette. Stretchy material, fits true to size.', 'category': 'tops', 'style_tags': ['y2k', 'grunge', 'goth', 'layering'], 'size': 'S/M', 'condition': 'excellent', 'price': 15.0, 'colors': ['black'], 'brand': None, 'platform': 'depop'}, {'id':'lst_002', 'title': 'Y2K Baby Tee — Butterfly Print', 'description': 'Super cute early 2000s baby tee with butterfly graphic. Fittedcrop length. Tag says medium but fits like a small.', 'category': 'tops', 'style_tags': ['y2k', 'vintage', 'graphic tee', 'cottagecore'], 'size': 'S/M', 'condition': 'excellent', 'price': 18.0, 'colors': ['white', 'pink', 'purple'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_033', 'title': 'Vintage Band Tee — Faded Grey', 'description': 'Faded grey band-style tee with distressed graphic. Crew neck. Fits boxy. Well-loved but no holes or major damage.', 'category': 'tops', 'style_tags': ['vintage', 'grunge', 'band tee', 'graphic tee', 'streetwear'], 'size': 'L', 'condition': 'fair', 'price': 19.0, 'colors': ['grey', 'charcoal'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_006', 'title': 'Graphic Tee — 2003 Tour Bootleg Style', 'description': 'Vintage-style bootleg tee with faded graphic. Slightly boxy fit. 100% cotton, soft and worn-in.', 'category': 'tops', 'style_tags': ['graphic tee', 'vintage', 'grunge','streetwear', 'band tee'], 'size': 'L', 'condition': 'good', 'price': 24.0, 'colors': ['black'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_015', 'title': 'Vintage Graphic Hoodie — Faded Black', 'description': 'Faded black pullover hoodie with barely-visible vintage graphic on the chest. Cozy interior. Some pilling but adds to the worn-in look.', 'category': 'tops', 'style_tags': ['vintage', 'grunge', 'graphic', 'streetwear'], 'size': 'L', 'condition': 'fair', 'price': 26.0, 'colors': ['black', 'charcoal'], 'brand': None, 'platform': 'depop'}, {'id': 'lst_011', 'title': 'Low-Rise Cargo Pants — Khaki', 'description': 'Y2K era low-rise cargo pants. Lots of pockets. Khaki color, slightly distressed at the hems. Great for layering with a long tee.', 'category': 'bottoms', 'style_tags': ['y2k', 'cargo', '2000s', 'streetwear'], 'size': 'W29', 'condition': 'fair', 'price': 27.0, 'colors': ['khaki', 'tan'], 'brand': None, 'platform': 'poshmark'}]
 ```
 $ python -c "from tools import suggest_outfit; ..."
 
 ```
+Hey there, fashionista! Those vintage Levi's 501s are an absolute thrift score. Since you already have an awesome wardrobe, let's style your potential new jeans with two effortless looks using *only* the pieces you already own!
 
+**Look 1: Casual Streetwear**
+Layer your White ribbed tank top tucked into the Vintage Levi's 501 Jeans — Medium Wash. Pull on your Vintage black denim jacket for that cool double-denim moment, add the Chunky white sneakers, and finish with the Black crossbody bag. 
+
+**Look 2: Cozy & Edgy**
+Throw on your Oversized grey crewneck sweatshirt over the Vintage Levi's 501 Jeans — Medium Wash. Cinch it with the Brown leather belt, step into your Black combat boots, and toss the Black crossbody bag over your shoulder for an easy, effortless vibe.
 ```
 $ python -c "from tools import create_fit_card; ..."
 
 ```
 
+Score these vintage Levi's 501 jeans for just $38.00 on depop and my closet is officially complete. I'm rocking them with crisp white sneakers for the ultimate '90s off-duty vibe. It’s effortless streetwear perfection that I'll be wearing on repeat.
 ---
 
 ## How I Used AI

@@ -28,38 +28,49 @@ import re
 
 # ── Tool 1: search_listings ───────────────────────────────────────────────────
 
+import re
+import config
 
-def search_listings(description, size=None, max_price=None):
+STOPWORDS = {"a", "an", "the", "for", "with", "and", "or", "in", "of", "to", "under", "size"}
+
+def _tokens(text):
+    return set(re.findall(r"[a-z0-9]+", text.lower())) - STOPWORDS
+
+def search_listings(description, category=None, size=None, max_price=None, color=None):
     results = load_listings()
 
-    # Price filter (inclusive)
     if max_price is not None:
         results = [l for l in results if l["price"] <= max_price]
 
-    # Size filter: whole-token match, so "m" matches "S/M" but "s" doesn't match "US 9"
+    if category is not None:
+        cat = category.strip().lower()
+        results = [l for l in results if l["category"].lower() == cat]
+
+    # Whole-token size match: "m" matches "S/M", "s" doesn't match "US 9"
     if size is not None:
         wanted = size.strip().lower()
-        results = [
-            l for l in results
-            if wanted in re.split(r"[\s/,\-]+", l["size"].strip().lower())
-        ]
+        results = [l for l in results
+                   if wanted in re.split(r"[\s/,\-]+", l["size"].strip().lower())]
 
-    # Keyword scoring
-    words = set(re.findall(r"[a-z0-9]+", description.lower()))
+    # Keep listings that have at least one of the requested colors
+    if color:
+        wanted_colors = {c.lower() for c in color}
+        results = [l for l in results
+                   if wanted_colors & {c.lower() for c in l["colors"]}]
+
+    words = _tokens(description)
     scored = []
     for l in results:
-        parts = [l["title"], l["description"], l["category"],
-                 *l["style_tags"], *l["colors"]]
-        if l["brand"]:  # brand is often None
+        parts = [l["title"], l["description"], l["category"], *l["style_tags"], *l["colors"]]
+        if l["brand"]:
             parts.append(l["brand"])
-        text_words = set(re.findall(r"[a-z0-9]+", " ".join(parts).lower()))
-        score = len(words & text_words)
+        score = len(words & _tokens(" ".join(parts)))
         if score > 0:
             scored.append((score, l))
 
-    scored.sort(key=lambda pair: pair[0], reverse=True)
+    # Best match first; cheaper listing wins a tie
+    scored.sort(key=lambda p: (-p[0], p[1]["price"]))
     return [l for _, l in scored[:config.SEARCH_RESULT_LIMIT]]
-
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
 
@@ -111,38 +122,38 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
 
 def create_fit_card(outfit: str, new_item: dict) -> str:
-    """
-    Write a short caption someone would actually post about the find.
+    # Guard: empty or whitespace-only outfit -> feedback, no model call
+    if not outfit or not outfit.strip():
+        return ("Can't write a fit card without an outfit suggestion. "
+                "Run suggest_outfit first and pass its result in.")
 
-    This calls the model too.
+    item_desc = (
+        f"{new_item['title']} ({new_item['category']}), "
+        f"colors: {', '.join(new_item['colors'])}, "
+        f"style: {', '.join(new_item['style_tags'])}, "
+        f"${new_item['price']:.2f} on {new_item['platform']}"
+    )
+    if new_item.get("brand"):
+        item_desc += f", brand: {new_item['brand']}"
 
-    Args:
-        outfit:   the outfit suggestion string from suggest_outfit().
-        new_item: the listing dict for the item.
+    system = (
+        "You write short social media captions about thrift finds. "
+        "Write 2 to 4 sentences in a casual first-person voice, like a real post, "
+        "not a product description. "
+        "Mention the item, its price as a number with a $ sign, and the platform "
+        "it's listed on, once each. "
+        "Describe how it's styled using the outfit given, and be specific about "
+        "the vibe (e.g. '90s off-duty', 'cozy library academic'), not just 'cute'. "
+        "Return only the caption."
+    )
 
-    Returns:
-        A two-to-four sentence caption.
-        If `outfit` is empty or whitespace, return a descriptive message rather
-        than raising.
+    prompt = (
+        f"The find:\n{item_desc}\n\n"
+        f"How I'm wearing it:\n{outfit.strip()}"
+    )
 
-    The caption should read like a real post rather than a product description,
-    mention the item and its price and platform once each, and be specific about
-    the vibe.
+    response = generate(prompt, system=system)
 
-    It should also come out **differently for different inputs**. If you run
-    this three times on the same item and get three word-for-word identical
-    strings, it's one of two things, and both are near the top of `config.py`:
-
-        • CACHE_ENABLED — the adapter handed back an answer it already had
-        • TEMPERATURE   — at 0.0 the model gives the same words every time
-
-    TODO:
-        1. Guard against an empty or whitespace-only `outfit`.
-        2. Build a prompt with the item details and the outfit.
-        3. Call generate() and return the response.
-
-    Test it from a terminal before you move on:
-        python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
-    """
-    # TODO: replace this with your implementation
-    return ""
+    if not response:
+        return "Couldn't write a caption this time. Please try again."
+    return response.strip()
