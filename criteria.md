@@ -50,13 +50,11 @@ If there are no listings, the agent stops calling the second tool right away to 
      look like state failure — it looks like a tool problem. Something that
      compares session["selected_item"] against what actually reached
      suggest_outfit is the shape you're after. -->
-The item selected is mentioned in every tool and has a description to know that the next tool received the same item.
-
+In at least 4/5 times, the item the next tool recieved is the same item the search found. 
 
 **Why this target:**
 
-This allows to measure whether the item selected is the same one used in every tool.
-
+The next tool mentions the input it received from the previous function, but it might be empty.
 ---
 
 ## 4. Something about the fit card
@@ -71,12 +69,12 @@ This allows to measure whether the item selected is the same one used in every t
      mentions the price? Two different items producing the same opening
      sentence? A card longer than a caption anyone would post? Any of those can
      be turned into a number. -->
-The fit card captions are complete, distinct, and postable. It includes the price, the item's name, doesn't make up any false information.
+In at least 4/4 the fit card captions include the price, the item's name, platform, and doesn't make up any false information.
 
 
 **Why this target:**
 
-If this information is not included, the card will not be complete.
+Some of this information might not be specified in the item's listing.
 
 ---
 
@@ -88,11 +86,10 @@ If this information is not included, the card will not be complete.
      wardrobe path, what happens when the model can't be reached, whether the
      search respects a price ceiling — anything, as long as it names a number
      or an observable outcome. -->
-If the model can't be reached, the systems stops and let's the user know there's an error and explains where.
-
+suggest_outfit does not recommend the same clothing item twice. i.e doesn't recommend two pair of jeans, or shirts in the same outfit.
 
 **Why this target:**
-This allows me to evaluate where the system went wrong.
+This proves the robustness and accuracy of the function.
 
 
 ---
