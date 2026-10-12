@@ -327,25 +327,28 @@ full. -->
      `python run_eval.py --label after` -->
 
 **What I changed:**
+The empty wardrobe branch in suggest_outfit in tools.py to add a sentence that states no wardrobe was found so it is going to give a suggestion instead.
 
 **Which failure it was meant to fix:**
+It meant to fix the confusion when the outfit is suggested between the wardrobe and no wardrobe.
 
 ### Run Log — After
 
-| Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
-|---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+     | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
+     |---|---|---|---|---|---|---|---|
+     | 1. matching query completes | 4/5 | PASSED | PASSED | PASSED |PASSED |PASSED |PASSED (5/5) |
+     | 2. impossible query stops early | 5/5 | PASSED | PASSED | PASSED |PASSED |PASSED |PASSED (5/5) |
+     | 3. the tools recieved the same item the search found. | 5/5 | PASSED | PASSED | PASSED |PASSED | PASSED |PASSED (5 /5) |
+     | empty wardrobe _(diagnostic — not one of your five)_ | 5/5 | PASSED | PASSED | PASSED |PASSED |PASSED |PASSED (5/5) |
+     | 4. fit-cards |4/5 | PASSED | PASSED | PASSED |PASSED |PASSED |PASSED (5/5) |
+     | 5. single item suggested | 4/5 | PASSED | PASSED | PASSED |PASSED |PASSED | PASSED (5/5)|
 
 **Did it help, and how do I know:**
 
 <!-- If it made things worse, say that. Honestly reported, that earns full
      credit and is more interesting than one that worked. -->
 
-
+Yes, it made it much more clear that the model was suggesting an outfit rather than pulling from an unexisting wardrobe.
 
 ---
 
@@ -355,7 +358,7 @@ full. -->
      you did. "I ran out of time" is fine if it's true. Pretending nothing is
      left is not. -->
 
-
+The fit-card is still generated even if there is no wardrobe. This could be improved.
 
 <!-- ═════════════════════════════════════════════════════════════════════
 

@@ -88,9 +88,11 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
         "If the user has no wardrobe, give general styling advice describing "
         "the kinds of pieces that pair well (e.g. 'wide-leg jeans', 'white "
         "sneakers') and do not refer to their wardrobe. "
+        "Don't mention that they have no wardrobe; start directly with the styling ideas. "
         "Keep it under 150 words."
     )
 
+    # 1. Build the prompt
     items = wardrobe.get("items", [])
     if not items:
         prompt = (
@@ -107,10 +109,18 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
             f"What I already own:\n{wardrobe_lines}"
         )
 
+    # 2. Call the model -- `response` exists from here on
     response = generate(prompt, system=system)
 
     if not response:
         return "Couldn't generate outfit suggestions this time. Please try again."
+
+    # 3. Empty wardrobe: put the notice in front of the model's styling ideas
+    if not items:
+        return (
+            "No wardrobe was found, so these aren't built from pieces you own, "
+            "but here's how you could style it:\n\n" + response.strip()
+        )
     return response
        
 
