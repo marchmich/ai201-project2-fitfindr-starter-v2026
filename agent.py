@@ -91,56 +91,81 @@ def parse_query(query: str) -> dict:
 def run_agent(query: str, wardrobe: dict) -> dict:
     """(keep your existing docstring here)"""
     session = new_session(query, wardrobe)
+    trace.start_trace()
     steps = 0
 
     # Step 1: parse
     steps += 1
     trace.check_iterations(steps)
     session["parsed"] = parse_query(session["query"])
+    trace.step("parse_query (regex)",
+               inputs=session["query"],
+               returned=str(session["parsed"]))
 
-    # Step 2: search, reading the parsed values back out of the session
-       # Step 2: search through the MCP server, reading the parsed values back out of the session
+    # Step 2: search through the MCP server, reading the parsed values back out of the session
     steps += 1
     trace.check_iterations(steps)
     parsed = session["parsed"]
-    session["search_results"] = call_tool("search_listings", {
+    search_args = {
         "description": parsed["description"],
         "size": parsed["size"],
         "max_price": parsed["max_price"],
         "category": parsed["category"],
-    })
+    }
+    session["search_results"] = call_tool("search_listings", search_args)
 
     # BRANCH: nothing came back -> tell the user what to change, and stop
     if not session["search_results"]:
         session["error"] = _no_results_message(session["parsed"])
+        trace.step("search_listings (via MCP)",
+                   inputs=str(search_args),
+                   returned=session["search_results"],
+                   note="branch: empty, stopping before suggest_outfit")
         return session
+
+    trace.step("search_listings (via MCP)",
+               inputs=str(search_args),
+               returned=session["search_results"],
+               note="branch: results found, continuing")
 
     # Step 3: pick the top-ranked result
     session["selected_item"] = session["search_results"][0]
 
+    # Steps 4 and 5 call the model; a bad key or outage raises ModelUnavailable
     try:
-            # Step 4: outfit
-            steps += 1
-            trace.check_iterations(steps)
-            session["outfit_suggestion"] = suggest_outfit(
-                session["selected_item"], session["wardrobe"]
-            )
+        # Step 4: outfit
+        steps += 1
+        trace.check_iterations(steps)
+        session["outfit_suggestion"] = suggest_outfit(
+            session["selected_item"], session["wardrobe"]
+        )
+        trace.step("suggest_outfit",
+                   inputs=f'new_item={session["selected_item"]["title"]!r}, '
+                          f'wardrobe_items={len(session["wardrobe"].get("items", []))}',
+                   returned=session["outfit_suggestion"])
 
-            # Step 5: fit card
-            steps += 1
-            trace.check_iterations(steps)
-            session["fit_card"] = create_fit_card(
-                session["outfit_suggestion"], session["selected_item"]
-            )
-        except ModelUnavailable as e:
-            session["error"] = (
-                "The styling model isn't available right now, so I couldn't build "
-                "outfits or a fit card. Check that your API key is set correctly, "
-                f"then try again. (Details: {e})"
-            )
-            return session
-
+        # Step 5: fit card
+        steps += 1
+        trace.check_iterations(steps)
+        session["fit_card"] = create_fit_card(
+            session["outfit_suggestion"], session["selected_item"]
+        )
+        trace.step("create_fit_card",
+                   inputs=f'new_item={session["selected_item"]["title"]!r}, '
+                          f'outfit={session["outfit_suggestion"]!r}',
+                   returned=session["fit_card"])
+    except ModelUnavailable as e:
+        session["error"] = (
+            "The styling model isn't available right now, so I couldn't build "
+            "outfits or a fit card. Check that your API key is set correctly, "
+            f"then try again. (Details: {e})"
+        )
+        trace.step("model call failed",
+                   returned=str(e),
+                   note="ModelUnavailable: stopping, error set in session")
         return session
+
+    return session
 
 
 

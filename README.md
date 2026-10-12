@@ -259,7 +259,34 @@ that produced it:
 **Happy path**
 
 ```
+'denim shorts under 20' --trace
+[1] parse_query (regex)
+      in:  denim shorts under 20
+      out: {'description': 'denim shorts', 'size': None, 'max_price': 20.0, 'category': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'denim shorts', 'size': None, 'max_price': 20.0, 'category': None}
+      out: 1 items: Biker Shorts — Black, Shiny
+      →    branch: results found, continuing
+[3] suggest_outfit
+      in:  new_item='Biker Shorts — Black, Shiny', wardrobe_items=10
+      out: Hey bestie! $14 for shiny black biker shorts is an absolute steal, and we can totally style them with items yo…
+[4] create_fit_card
+      in:  new_item='Biker Shorts — Black, Shiny', outfit="Hey bestie! $14 for shiny black biker shorts is an absolute st…
+      out: Scored these shiny black biker shorts for just $14 on Depop and I'm obsessed! I'm leaning into that off-duty m…
 
+  Found:    Biker Shorts — Black, Shiny — $14.0 on depop
+
+  Outfit:   Hey bestie! $14 for shiny black biker shorts is an absolute steal, and we can totally style them with items you already own. Here are two cute Y2K-inspired looks:
+
+**Look 1: Sporty Streetwear**
+Throw on your oversized grey crewneck sweatshirt for that comfy, off-duty model vibe. Pair it with your chunky white sneakers and the black crossbody bag for a quick coffee run. 
+
+**Look 2: Edgy 2000s**
+Layer your black cropped zip hoodie right over the biker shorts to show a little contrast, and lace up your black combat boots for a tougher attitude. Finish the fit with your black crossbody bag. 
+
+You're going to rock these!
+
+  Fit card: Scored these shiny black biker shorts for just $14 on Depop and I'm obsessed! I'm leaning into that off-duty model vibe for Look 1 by pairing them with an oversized grey crewneck and chunky white sneakers for a quick coffee run.
 ```
 
 **Empty search**
