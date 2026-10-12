@@ -50,7 +50,7 @@ If there are no listings, the agent stops calling the second tool right away to 
      look like state failure — it looks like a tool problem. Something that
      compares session["selected_item"] against what actually reached
      suggest_outfit is the shape you're after. -->
-In at least 4/5 times, the item the next tool recieved is the same item the search found. 
+In at least 4/5 times, the tools recieved the same item the search found. 
 
 **Why this target:**
 

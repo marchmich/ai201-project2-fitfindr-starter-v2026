@@ -199,7 +199,8 @@ Score these vintage Levi's 501 jeans for just $38.00 on depop and my closet is o
      |---|---|---|---|---|---|---|---|
      | 1. matching query completes | 4/5 | PASSED | PASSED | PASSED |PASSED |PASSED |PASSED (5/5) |
      | 2. impossible query stops early | 5/5 | PASSED | PASSED | PASSED |PASSED |PASSED |PASSED (5/5) |
-     | empty wardrobe _(diagnostic — not one of your five)_ | 4/5 | MISSED | MISSED | MISSED | MISSED | MISSED | MISSED (0/5) |
+     | 3. the tools recieved the same item the search found. | 5/5 | PASSED | PASSED | PASSED |PASSED |PASSED |PASSED (5/5) |
+     | empty wardrobe _(diagnostic — not one of your five)_ | 5/5 | PASSED | PASSED | PASSED |PASSED |PASSED |PASSED (5/5) |
      | 4. fit-cards |4/5 | PASSED | PASSED | PASSED |PASSED |PASSED |PASSED (5/5) |
      | 5. single item suggested | 4/5 | PASSED | PASSED | PASSED |PASSED |PASSED | PASSED (5/5)|
 
@@ -241,16 +242,18 @@ I am obsessed with this butterfly baby tee I just scored on Depop for $18. I'm l
      three. -->
 
 | # | Criterion | Target | Verdict | How I decided |
-|---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+|---|---|---|---|---|---|---|---|
+| 1. matching query completes | 4/5 |  PASSED | All 5/5 queries were complete and matched |
+| 2. impossible query stops early | 5/5 | PASSED | All 5/5 query stopped early when nothing matched |
+| 3. the tools recieved the same item the search found. | 5/5 | PASSED | All 5/5 queries used the same item found in the search | 
+| empty wardrobe _(diagnostic — not one of your five)_ | 4/ 5 | Passed | None of the queries stoped when the wardrobe was empty and returned a suggestion instead. |
+| 4. fit-cards | 4/5  |  PASSED |  All 5/5 queries include the price, the item category, and the platform |
+| 5. single item suggested | 4/5 | PASSED  | None of the queries suggested two items of the same category. |
+
 
 **Diagnoses**
 
-
+3. suggest_outfit returns general styling advice with an empty wardrobe rather than raising or returning an error. 
 
 ---
 

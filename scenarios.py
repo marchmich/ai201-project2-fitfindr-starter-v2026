@@ -37,6 +37,13 @@ SCENARIOS = [
     },
     {
         #Complete fit cards
+        "name": "the tools recieved the same item the search found.",
+        "query": "white pants under $30",
+        "wardrobe": "example",
+        "criterion": 3,
+    },
+    {
+        #Complete fit cards
         "name": "fit-cards",
         "query": "white pants under $30",
         "wardrobe": "example",
