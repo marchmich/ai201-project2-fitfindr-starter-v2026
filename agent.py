@@ -118,21 +118,30 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     # Step 3: pick the top-ranked result
     session["selected_item"] = session["search_results"][0]
 
-    # Step 4: outfit
-    steps += 1
-    trace.check_iterations(steps)
-    session["outfit_suggestion"] = suggest_outfit(
-        session["selected_item"], session["wardrobe"]
-    )
+    try:
+            # Step 4: outfit
+            steps += 1
+            trace.check_iterations(steps)
+            session["outfit_suggestion"] = suggest_outfit(
+                session["selected_item"], session["wardrobe"]
+            )
 
-    # Step 5: fit card
-    steps += 1
-    trace.check_iterations(steps)
-    session["fit_card"] = create_fit_card(
-        session["outfit_suggestion"], session["selected_item"]
-    )
+            # Step 5: fit card
+            steps += 1
+            trace.check_iterations(steps)
+            session["fit_card"] = create_fit_card(
+                session["outfit_suggestion"], session["selected_item"]
+            )
+        except ModelUnavailable as e:
+            session["error"] = (
+                "The styling model isn't available right now, so I couldn't build "
+                "outfits or a fit card. Check that your API key is set correctly, "
+                f"then try again. (Details: {e})"
+            )
+            return session
 
-    return session
+        return session
+
 
 
 def _no_results_message(parsed: dict) -> str:

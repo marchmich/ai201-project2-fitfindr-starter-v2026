@@ -265,7 +265,9 @@ that produced it:
 **Empty search**
 
 ```
+python app.py ask 'denim jumpsuit under 10' 
 
+  Nothing matched "denim jumpsuit" in under $10. Try raising your max price, broader words (e.g. 'jacket' instead of 'cropped corduroy jacket').
 ```
 
 **On the MCP move:** <!-- what changed in your code, and whether anything
