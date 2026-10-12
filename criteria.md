@@ -69,7 +69,7 @@ The next tool mentions the input it received from the previous function, but it 
      mentions the price? Two different items producing the same opening
      sentence? A card longer than a caption anyone would post? Any of those can
      be turned into a number. -->
-In at least 4/4 the fit card captions include the price, the item's name, platform, and doesn't make up any false information.
+In at least 4/5 the fit card captions include the price, the item's name, platform, and doesn't make up any false information.
 
 
 **Why this target:**

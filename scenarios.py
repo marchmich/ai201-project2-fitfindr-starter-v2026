@@ -35,6 +35,20 @@ SCENARIOS = [
         "wardrobe": "empty",
         "criterion": None,
     },
+    {
+        #Complete fit cards
+        "name": "fit-cards",
+        "query": "white pants under $30",
+        "wardrobe": "example",
+        "criterion": 4,
+    },
+    {
+        # The results do not suggest the same item twice
+        "name": "single item suggested",
+        "query": "black shirt under $25",
+        "wardrobe": "example",
+        "criterion": 5,
+    },
     # TODO: add what your criteria 3, 4 and 5 need.
     #
     # Set "criterion" to the number in criteria.md that the scenario tests.
