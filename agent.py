@@ -17,6 +17,8 @@ import config
 import trace
 from tools import search_listings, suggest_outfit, create_fit_card
 from generate import ModelUnavailable
+from mcp_client import call_tool
+from utils.data_loader import load_listings
 
 
 # ── session state ─────────────────────────────────────────────────────────────
@@ -51,10 +53,12 @@ def new_session(query: str, wardrobe: dict) -> dict:
 
 def parse_query(query: str) -> dict:
     """
-    Regex parser. Pulls a max price and a size out of the query; whatever
-    text is left becomes the description.
+    Regex parser. Pulls max price and size out of the query, and spots a
+    category using the categories that exist in the catalogue. The remaining
+    words become the description.
       "vintage graphic tee under $30, size M"
-        -> {"description": "vintage graphic tee", "size": "m", "max_price": 30.0}
+        -> {"description": "vintage graphic tee", "size": "m",
+            "max_price": 30.0, "category": None}
     """
     text = query.lower()
 
@@ -70,9 +74,18 @@ def parse_query(query: str) -> dict:
         size = m.group(1)
         text = text.replace(m.group(0), " ")
 
-    # Drop leftover punctuation like the comma in "..., size M"
-    description = " ".join(re.findall(r"[a-z0-9]+", text))
-    return {"description": description, "size": size, "max_price": max_price}
+    words = re.findall(r"[a-z0-9]+", text)
+
+    # Category: only if a word exactly matches a category in the catalogue
+    categories = {l["category"].lower() for l in load_listings()}
+    category = next((w for w in words if w in categories), None)
+
+    return {
+        "description": " ".join(words),
+        "size": size,
+        "max_price": max_price,
+        "category": category,
+    }
 
 
 def run_agent(query: str, wardrobe: dict) -> dict:
@@ -86,14 +99,16 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     session["parsed"] = parse_query(session["query"])
 
     # Step 2: search, reading the parsed values back out of the session
+       # Step 2: search through the MCP server, reading the parsed values back out of the session
     steps += 1
     trace.check_iterations(steps)
     parsed = session["parsed"]
-    session["search_results"] = search_listings(
-        parsed["description"],
-        size=parsed["size"],
-        max_price=parsed["max_price"],
-    )
+    session["search_results"] = call_tool("search_listings", {
+        "description": parsed["description"],
+        "size": parsed["size"],
+        "max_price": parsed["max_price"],
+        "category": parsed["category"],
+    })
 
     # BRANCH: nothing came back -> tell the user what to change, and stop
     if not session["search_results"]:

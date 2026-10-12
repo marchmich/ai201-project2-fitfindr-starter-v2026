@@ -36,7 +36,7 @@ STOPWORDS = {"a", "an", "the", "for", "with", "and", "or", "in", "of", "to", "un
 def _tokens(text):
     return set(re.findall(r"[a-z0-9]+", text.lower())) - STOPWORDS
 
-def search_listings(description, category=None, size=None, max_price=None, color=None):
+def search_listings(description, category=None, size=None, max_price=None):
     results = load_listings()
 
     if max_price is not None:
@@ -52,11 +52,6 @@ def search_listings(description, category=None, size=None, max_price=None, color
         results = [l for l in results
                    if wanted in re.split(r"[\s/,\-]+", l["size"].strip().lower())]
 
-    # Keep listings that have at least one of the requested colors
-    if color:
-        wanted_colors = {c.lower() for c in color}
-        results = [l for l in results
-                   if wanted_colors & {c.lower() for c in l["colors"]}]
 
     words = _tokens(description)
     scored = []

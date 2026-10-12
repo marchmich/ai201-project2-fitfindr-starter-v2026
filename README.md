@@ -61,7 +61,7 @@ The user asks for a piece of clothing with a specific description, size, or pric
 ### `search_listings`
 
 - **What it does: It takes the users input (a description of a clothing item) that can include size, brand, max price or style and searches for items across the catalogue that match the input. It filters by input and eliminate listings that do not match (i.e. wrong size or price). Then sends the results to suggest_outfits**
-- **Inputs: description (str), category (str),  size (str),max_price (float), color (list) or None=None** <!-- name and type each: `max_price` (float), not "a price" -->
+- **Inputs: description (str), category (str),  size (str), max_price (float), color (list) or None=None** <!-- name and type each: `max_price` (float), not "a price" -->
 - **Returns: A list of listing dicts that contains title, price, size, platform, color, brand, and category. Ranked by matching compatibility and lower price**
 - **When it has nothing: It returns an empty list**
 
